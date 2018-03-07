@@ -1,9 +1,9 @@
 const model = require('./model')
 
 module.exports = {
-  allsv: async ctx => {
-    let allsv = await model.Allsv
-    ctx.body = allsv
+  categoryPagination: async ctx => {
+    const categoryPagination = await model.categoryPagination(ctx.request.query)
+    ctx.body = categoryPagination
   }
 }
 

@@ -20,7 +20,7 @@ app.use(async (ctx, next) => {
 
 const controller = require('./controller')
 
-router.get('/test', controller.allsv)
+router.get('/category-pagination', controller.categoryPagination)
 
 app.use(router.routes())
 app.use(router.allowedMethods())

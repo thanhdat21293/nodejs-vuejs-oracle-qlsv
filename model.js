@@ -19,9 +19,12 @@ var dorelease = function(conn) {
 };
 
 // Optional Object Output Format
-var doquery_object = function (conn, cb) {
+var categoryPaginationModel = function (req, conn, cb) {
+  req.currentPage = parseInt(req.currentPage) || 1
+  req.perPage = parseInt(req.perPage) || 1
+  req.offset = (req.currentPage - 1) * req.perPage || 0
   conn.execute(
-    "SELECT * FROM SYS.USERS",
+    `SELECT * FROM SYS.categories OFFSET ${req.offset} ROWS FETCH NEXT ${req.perPage} ROWS ONLY`,
     {}, // A bind variable parameter is needed to disambiguate the following options parameter
     // otherwise you will get Error: ORA-01036: illegal variable name/number
     { outFormat: oracledb.OBJECT }, // outFormat can be OBJECT or ARRAY.  The default is ARRAY
@@ -35,18 +38,29 @@ var doquery_object = function (conn, cb) {
     });
 };
 
-const Allsv = new Promise(function(resolve, reject) {
-  async.waterfall(
-    [
-      doconnect,
-      doquery_object
-    ],
-    (err, result) => {
-      if (err) { reject("In waterfall error cb: ==>", err, "<=="); }
-      if (result) {
+const categoryPagination = (req, cb) => {
+  return new Promise(function(resolve, reject) {
+    doconnect((err, conn) => {
+      categoryPaginationModel(req, conn, (err, result) => {
         resolve(result)
-      }
-    });
+      })
+  })
 })
+  // return new Promise(function(resolve, reject) {
+  //   async.waterfall(
+  //     [
+  //       doconnect,
+  //       categoryPaginationModel
+  //     ],
+  //     (err, result) => {
+  //       if (err) { reject("In waterfall error cb: ==>", err, "<=="); }
+  //       if (result) {
+  //         resolve(result)
+  //       }
+  //     });
+  // })
+}
 
-module.exports = { Allsv }
+module.exports = {
+  categoryPagination
+}
