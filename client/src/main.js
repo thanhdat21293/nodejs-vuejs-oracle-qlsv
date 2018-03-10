@@ -4,6 +4,8 @@ import Vue from 'vue'
 import App from './App'
 import router from './router'
 
+import './filters'
+
 // eslint-disable-next-line
 import './assets/css/style.sass'
 

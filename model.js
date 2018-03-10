@@ -23,13 +23,43 @@ var dorelease = function(conn) {
 };
 
 
-/* *****************************************************CATEGORIES****************************************************************** */
+/* ********************************************************************************************************
+*********************************************            **************************************************
+********************************************* CATEGORIES **************************************************
+*********************************************            **************************************************
+***********************************************************************************************************/
+var allCategoriesModel = function (req, conn, cb) {
+  conn.execute(
+    `SELECT * FROM SYS.categories ORDER BY NAME DESC`,
+    {}, // A bind variable parameter is needed to disambiguate the following options parameter
+    // otherwise you will get Error: ORA-01036: illegal variable name/number
+    { outFormat: oracledb.OBJECT }, // outFormat can be OBJECT or ARRAY.  The default is ARRAY
+    function(err, result)
+    {
+      if (err) {
+        return cb(err, conn);
+      } else {
+        return cb(null, result.rows);
+      }
+    });
+};
+const allCategories = (req, cb) => {
+  return new Promise(function(resolve, reject) {
+    doconnect((err, conn) => {
+      allCategoriesModel(req, conn, (err, result) => {
+        resolve(result)
+      })
+    })
+  })
+}
+
+
 var categoryPaginationModel = function (req, conn, cb) {
   req.currentPage = parseInt(req.currentPage) || 1
   req.perPage = parseInt(req.perPage) || 1
   req.offset = (req.currentPage - 1) * req.perPage || 0
   conn.execute(
-    `SELECT * FROM SYS.categories ORDER BY name ASC OFFSET ${req.offset} ROWS FETCH NEXT ${req.perPage} ROWS ONLY`,
+    `SELECT * FROM SYS.categories ORDER BY ID DESC OFFSET ${req.offset} ROWS FETCH NEXT ${req.perPage} ROWS ONLY`,
     {}, // A bind variable parameter is needed to disambiguate the following options parameter
     // otherwise you will get Error: ORA-01036: illegal variable name/number
     { outFormat: oracledb.OBJECT }, // outFormat can be OBJECT or ARRAY.  The default is ARRAY
@@ -238,17 +268,118 @@ const categoryUpdate = (req, cb) => {
   })
 }
 
+
+/* ********************************************************************************************************
+*********************************************            **************************************************
+*********************************************    ITEMS   **************************************************
+*********************************************            **************************************************
+***********************************************************************************************************/
+
+var itemsPaginationModel = function (req, conn, cb) {
+  req.currentPage = parseInt(req.currentPage) || 1
+  req.perPage = parseInt(req.perPage) || 1
+  req.offset = (req.currentPage - 1) * req.perPage || 0
+  conn.execute(
+    `SELECT i.*, c.name
+    FROM SYS.items i
+    INNER JOIN SYS.categories c ON c.id = i.category_id
+    ORDER BY i.id ASC
+    OFFSET ${req.offset} ROWS FETCH NEXT ${req.perPage} ROWS ONLY`,
+    {}, // A bind variable parameter is needed to disambiguate the following options parameter
+    // otherwise you will get Error: ORA-01036: illegal variable name/number
+    { outFormat: oracledb.OBJECT }, // outFormat can be OBJECT or ARRAY.  The default is ARRAY
+    function(err, result)
+    {
+      if (err) {
+        return cb(err, conn);
+      } else {
+        return cb(null, result.rows);
+      }
+    });
+};
+const itemsPagination = (req, cb) => {
+  return new Promise(function(resolve, reject) {
+    doconnect((err, conn) => {
+      itemsPaginationModel(req, conn, (err, result) => {
+        resolve(result)
+      })
+    })
+  })
+}
+
+
+var itemsCountModel = function (req, conn, cb) {
+  conn.execute(
+    `SELECT count(*) as count FROM SYS.items`,
+    {}, // A bind variable parameter is needed to disambiguate the following options parameter
+    // otherwise you will get Error: ORA-01036: illegal variable name/number
+    { outFormat: oracledb.OBJECT }, // outFormat can be OBJECT or ARRAY.  The default is ARRAY
+    function(err, result)
+    {
+      if (err) {
+        return cb(err, conn);
+      } else {
+        return cb(null, result.rows);
+      }
+    });
+};
+const itemsCount = (req, cb) => {
+  return new Promise(function(resolve, reject) {
+    doconnect((err, conn) => {
+      itemsCountModel(req, conn, (err, result) => {
+        resolve(result)
+      })
+    })
+  })
+}
+
+
+var itemAddModel = function (req, conn, cb) {
+  console.log(req)
+  conn.execute(
+    `INSERT INTO SYS.items (FULLNAME, BIRTHDAY, GENDER, ADDRESS, CATEGORY_ID) VALUES(:fullname, :birthday, :gender, :address, :category_id)`,
+    req, // A bind variable parameter is needed to disambiguate the following options parameter
+    // otherwise you will get Error: ORA-01036: illegal variable name/number
+    { autoCommit: true },
+    // {outFormat: oracledb.OBJECT, autoCommit:true},
+    function(err, result)
+    {
+      if (err) {
+        console.log(err)
+        return cb(err, err.Error);
+      } else {
+        return cb(null, 'Thêm thành công');
+      }
+    });
+};
+const itemAdd = (req, cb) => {
+  return new Promise(function(resolve, reject) {
+    doconnect((err, conn) => {
+      itemAddModel(req, conn, (err, result) => {
+        if (err) {
+          resolve({ msgErr: 'Không thể thêm'})
+        }
+        resolve(result)
+      })
+    })
+  })
+}
+
 module.exports = {
   // categories
+  allCategories,
   categoryPagination,
   categoryCount,
   categoryCheckName,
   categoryAdd,
   categoryDelete,
   categoryById,
-  categoryUpdate
+  categoryUpdate,
 
   // items
+  itemsPagination,
+  itemsCount,
+  itemAdd
 
   // categories_items
 }

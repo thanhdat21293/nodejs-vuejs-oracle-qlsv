@@ -1,10 +1,10 @@
 <template>
   <div>
     <nav class="nav nav-pills flex-column flex-sm-row">
-      <a class="flex-sm-fill text-sm-center nav-link active" href="/categories">Lớp học</a>
-      <a class="flex-sm-fill text-sm-center nav-link" href="/items">Sinh viên</a>
+      <a class="flex-sm-fill text-sm-center nav-link" href="/categories">Lớp học</a>
+      <a class="flex-sm-fill text-sm-center nav-link active" href="/items">Sinh viên</a>
     </nav>
-    <h3>QUẢN LÝ LỚP HỌC</h3>
+    <h3>QUẢN LÝ SINH VIÊN</h3>
     <div class="container">
       <button type="button" class="btn btn-outline-primary" data-toggle="modal" data-target="#exampleModalCenter" @click="showAdd">Thêm</button>
       <br><br>
@@ -18,15 +18,26 @@
         <thead>
           <tr>
               <th>STT</th>
-              <th>Tên Lớp học</th>
+              <th>Họ tên</th>
+              <th>Ngày sinh</th>
+              <th>Giới tính</th>
+              <th>Địa chỉ</th>
+              <th>Lớp học</th>
+              <th>Ngày tạo</th>
               <th width="300"></th>
           </tr>
         </thead>
 
         <tbody>
-          <tr v-for="(item, stt) in categories" :key="stt">
+          <tr v-for="(item, stt) in items" :key="stt">
             <td>{{ ((currentPage - 1) * perPage) + stt + 1 }}</td>
+            <td>{{ item.FULLNAME }}</td>
+            <td>{{ item.BIRTHDAY | dateFormat }}</td>
+            <td v-if="item.GENDER === 'nam'">Nam</td>
+            <td v-if="item.GENDER === 'nu'">Nữ</td>
+            <td>{{ item.ADDRESS }}</td>
             <td>{{ item.NAME }}</td>
+            <td>{{ item.CREATED_AT | dateFormat }}</td>
             <td>
               <button class="btn btn-outline-info" data-toggle="modal" data-target="#exampleModalCenter1" @click="showEdit(item.ID)">Sửa</button>
               <button class="btn btn-outline-danger" @click="del(item.ID)">Xóa</button>
@@ -56,7 +67,7 @@
   <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLongTitle">Thêm Lớp học</h5>
+        <h5 class="modal-title" id="exampleModalLongTitle">Thêm mới sinh viên</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -68,8 +79,24 @@
         <div class="alert alert-success" role="alert" v-if="msg">
           {{msg}}
         </div>
-        Tên Lớp học
-        <input type="text" class="form-control" v-model="name">
+        Họ tên*
+        <input type="text" class="form-control" v-model="fullname"> <br>
+        Ngày sinh*
+        <input type="date" class="form-control" v-model="birthday"> <br>
+        Giới tính*
+        <select class="form-control" v-model="gender">
+          <option value=""></option>
+          <option value="nam">Nam</option>
+          <option value="nu">Nữ</option>
+        </select> <br>
+        Lớp học
+        <select class="form-control" v-model="category">
+          <option value=""></option>
+          <option v-for="item in categories" :key="item.ID" :value="item.ID">{{ item.NAME }}</option>
+        </select>
+        <br>
+        Địa chỉ
+        <input type="text" class="form-control" v-model="address">
 
       </div>
       <div class="modal-footer">
@@ -84,7 +111,7 @@
   <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content" v-if="category">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLongTitle">Sửa Lớp học</h5>
+        <h5 class="modal-title" id="exampleModalLongTitle">Sửa lớp</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -96,7 +123,7 @@
         <div class="alert alert-success" role="alert" v-if="msg">
           {{msg}}
         </div>
-        Tên Lớp học
+        Tên lớp
         <input type="text" class="form-control" v-model="name">
 
       </div>
@@ -118,16 +145,21 @@ export default {
   data () {
     return {
       currentPage: 1,
-      perPage: 2,
-      categories: [],
+      perPage: 1,
+      items: [],
       count: 0,
       totalPage: 0,
-      name: '',
+      fullname: '',
+      birthday: '',
+      gender: '',
+      address: '',
       msgErr: '',
       msg: '',
       msgErrDel: '',
       msgDel: '',
-      category: {}
+      item: {},
+      categories: [],
+      category: ''
     }
   },
   watch: {
@@ -143,8 +175,6 @@ export default {
       this.getData()
     },
     msgDel () {
-      this.getData()
-      this.getCount()
       setTimeout(() => {
         this.msgDel = ''
       }, 2000)
@@ -158,6 +188,10 @@ export default {
   created () {
     this.getData()
     this.getCount()
+    axios.get(`${SERVER}/all-category`)
+      .then(res => {
+        this.categories = res.data.allCategories
+      })
   },
   methods: {
     update (id) {
@@ -194,13 +228,13 @@ export default {
       }
     },
     getData () {
-      axios.get(`${SERVER}/category-pagination?currentPage=${this.currentPage}&perPage=${this.perPage}`)
+      axios.get(`${SERVER}/items-pagination?currentPage=${this.currentPage}&perPage=${this.perPage}`)
         .then(res => {
-          this.categories = res.data
+          this.items = res.data
         })
     },
     getCount () {
-      axios.get(`${SERVER}/category-count`)
+      axios.get(`${SERVER}/items-count`)
         .then(res => {
           this.count = parseInt(res.data[0].COUNT)
         })
@@ -211,16 +245,26 @@ export default {
       this.name = ''
     },
     add () {
-      if (this.name.trim()) {
+      if (!this.fullname) {
+        this.msgErr = 'Họ tên không được để trống.'
+      } else if (!this.birthday) {
+        this.msgErr = 'Ngày sinh không được để trống.'
+      } else if (!this.gender) {
+        this.msgErr = 'Giới tính không được để trống.'
+      } else {
         this.msgErr = ''
         this.msg = ''
-        axios.post(`${SERVER}/category`, {name: this.name})
+        axios.post(`${SERVER}/item`, {
+          fullname: this.fullname,
+          birthday: this.birthday,
+          gender: this.gender,
+          category_id: this.category,
+          address: this.address
+        })
           .then(res => {
             this.msg = res.data.msg || ''
             this.msgErr = res.data.msgErr || ''
           })
-      } else {
-        this.msgErr = 'Tên lớp không được để trống.'
       }
     },
     getPage (number) {
@@ -243,7 +287,6 @@ export default {
   }
 }
 </script>
-
 <style lang="sass" scoped>
 .nav-wrapper
   text-align: center

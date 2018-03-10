@@ -20,12 +20,20 @@ app.use(async (ctx, next) => {
 
 const controller = require('./controller')
 
+/* ******************* categories ********************** */
+router.get('/all-category', controller.allCategories)
 router.get('/category-pagination', controller.categoryPagination)
 router.get('/category-count', controller.categoryCount)
 router.get('/category', controller.categoryById)
 router.post('/category', controller.categoryAdd)
 router.put('/category/:id', controller.categoryUpdate)
 router.delete('/category/:id', controller.categoryDelete)
+
+/* ******************* items ********************** */
+router.get('/items-pagination', controller.itemsPagination)
+router.get('/items-count', controller.itemsCount)
+router.post('/item', controller.itemAdd)
+
 
 app.use(router.routes())
 app.use(router.allowedMethods())

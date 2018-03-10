@@ -9,7 +9,7 @@ CREATE TABLE items (
   birthday TIMESTAMP,
   gender varchar(10),
   address varchar(160),
-  category_id integer,
+  category_id integer REFERENCES categories(id),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )
 
